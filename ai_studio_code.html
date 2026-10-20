@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ApexCapital // Autonomous Portfolio Terminal</title>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS 3.4 CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            apex: {
+              bg: '#0b0f17',
+              panel: '#111827',
+              card: 'rgba(17, 24, 39, 0.78)',
+              border: 'rgba(255, 255, 255, 0.08)',
+              emerald: '#10b981',
+              rose: '#f43f5e',
+              amber: '#f59e0b',
+              cyan: '#06b6d4',
+              indigo: '#6366f1'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Chart.js 4.4 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    body {
+      background-color: #0b0f17;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.06) 0px, transparent 45%),
+        radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.07) 0px, transparent 45%),
+        radial-gradient(at 50% 100%, rgba(6, 182, 212, 0.04) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: #f3f4f6;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+    .glass-card {
+      background: rgba(17, 24, 39, 0.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+    }
+    .glass-card-hover {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-card-hover:hover {
+      border-color: rgba(255, 255, 255, 0.16);
+      transform: translateY(-1px);
+      box-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.45);
+    }
+    .tab-btn {
+      position: relative;
+      transition: all 0.18s ease;
+    }
+    .tab-btn.active {
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b0f17;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1f2937;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #374151;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.85); opacity: 0.8; }
+      70% { transform: scale(1.9); opacity: 0; }
+      100% { transform: scale(1.9); opacity: 0; }
+    }
+    .live-dot::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 9999px;
+      background-color: #10b981;
+      animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col selection:bg-emerald-500/30 selection:text-emerald-200">
+
+  <!-- TOP INSTITUTIONAL HEADER -->
+  <header class="sticky top-0 z-40 border-b border-white/10 bg-[#0b0f17]/85 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      
+      <!-- Brand Logo & Engine Tag -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-indigo-500/20 border border-emerald-500/30 flex items-center justify-center shadow-inner">
+          <svg class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold tracking-tight text-white text-base sm:text-lg">ApexCapital</span>
+            <span class="hidden sm:inline-block text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+              QUANT v4.2
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-400 font-mono hidden sm:block">Autonomous $50.00 Micro-Fund Terminal</p>
+        </div>
+      </div>
+
+      <!-- Center Live Status Indicator -->
+      <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-900/90 border border-white/10">
+        <span class="relative flex h-2.5 w-2.5 live-dot">
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+        </span>
+        <span class="text-xs font-medium text-slate-200 tracking-wide">AI Autonomous Active Book</span>
+        <span class="hidden md:inline-block text-slate-600">|</span>
+        <span id="pollCountdownBadge" class="hidden md:inline-block text-[11px] font-mono text-slate-400">Sync: 60s</span>
+      </div>
+
+      <!-- Right Action Buttons -->
+      <div class="flex items-center gap-2">
+        <button id="simulateTickBtn" onclick="simulateMarketTick()" title="Simulate real-time price micro-tick" class="px-2.5 py-1.5 rounded-lg text-xs font-mono text-slate-300 hover:text-white bg-slate-800/70 hover:bg-slate-800 border border-white/10 transition flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span class="hidden sm:inline">Pulse Tick</span>
+        </button>
+
+        <button onclick="exportPortfolioJSON()" class="px-3 py-1.5 rounded-lg text-xs font-mono font-medium text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          <span>Export JSON</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- TOP 5 KPI METRIC GRID -->
+    <section aria-label="Portfolio Key Performance Indicators" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+      
+      <!-- KPI 1: Total Portfolio Value -->
+      <div class="glass-card glass-card-hover rounded-xl p-4 relative overflow-hidden">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Portfolio Value</span>
+          <span class="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2.5">
+          <span id="kpiTotalValue" class="text-2xl font-bold font-mono text-white">$48.87</span>
+          <span id="kpiTotalReturnBadge" class="text-xs font-mono font-semibold px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/30">
+            -2.26%
+          </span>
+        </div>
+        <p class="mt-2 text-[11px] text-slate-400 font-mono">Base Capital: <span class="text-slate-300">$50.00</span></p>
+      </div>
+
+      <!-- KPI 2: Cash Dry Powder -->
+      <div class="glass-card glass-card-hover rounded-xl p-4 relative overflow-hidden">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Cash Dry Powder</span>
+          <span class="p-1.5 rounded-lg bg-amber-500/10 text-amber-400">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2.5">
+          <span id="kpiCashValue" class="text-2xl font-bold font-mono text-amber-400">$7.45</span>
+          <span id="kpiCashPctBadge" class="text-xs font-mono font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            15.24%
+          </span>
+        </div>
+        <p class="mt-2 text-[11px] text-slate-400 font-mono">Target Band: <span class="text-slate-300">10% – 25%</span></p>
+      </div>
+
+      <!-- KPI 3: Realized P&L -->
+      <div class="glass-card glass-card-hover rounded-xl p-4 relative overflow-hidden">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Realized P&L</span>
+          <span class="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2.5">
+          <span id="kpiRealizedPnL" class="text-2xl font-bold font-mono text-rose-400">-$0.05</span>
+          <span id="kpiUnrealizedMini" class="text-[11px] font-mono text-slate-400">Unrealized: -$1.08</span>
+        </div>
+        <p class="mt-2 text-[11px] text-slate-400 font-mono">Closed Settled: <span id="kpiClosedCount" class="text-slate-300">4 Trades</span></p>
+      </div>
+
+      <!-- KPI 4: Win Rate -->
+      <div class="glass-card glass-card-hover rounded-xl p-4 relative overflow-hidden">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Win Rate</span>
+          <span class="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </span>
+        </div>
+        <div class="flex items-baseline gap-2.5">
+          <span id="kpiWinRate" class="text-2xl font-bold font-mono text-emerald-400">75.0%</span>
+          <span id="kpiWinLossRecord" class="text-xs font-mono font-semibold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+            3W - 1L
+          </span>
+        </div>
+        <p class="mt-2 text-[11px] text-slate-400 font-mono">Stop Discipline: <span class="text-slate-300">-4% to -6%</span></p>
+      </div>
+
+      <!-- KPI 5: Current Bot Stance -->
+      <div class="glass-card glass-card-hover rounded-xl p-4 relative overflow-hidden">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Current Bot Stance</span>
+          <span class="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="kpiBotStance" class="text-sm font-bold font-mono text-cyan-300 tracking-tight uppercase">SELECTIVE CATALYST</span>
+        </div>
+        <p id="kpiBotSubtext" class="mt-2 text-[11px] text-slate-400 font-mono truncate">Holding 15.2% Cash / Tech Core</p>
+      </div>
+
+    </section>
+
+    <!-- FAST ZERO-RELOAD TAB NAVIGATION -->
+    <nav aria-label="Dashboard Sections" class="flex items-center gap-2 overflow-x-auto pb-1 border-b border-white/10">
+      <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn active px-4 py-2.5 rounded-t-lg text-xs sm:text-sm font-medium border border-transparent flex items-center gap-2 whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+        </svg>
+        <span>1. Overview</span>
+      </button>
+
+      <button onclick="switchTab('holdings')" id="tab-btn-holdings" class="tab-btn text-slate-400 hover:text-slate-200 px-4 py-2.5 rounded-t-lg text-xs sm:text-sm font-medium border border-transparent flex items-center gap-2 whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+        <span>2. Holdings & Trades</span>
+        <span id="navHoldingsCount" class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-300">4</span>
+      </button>
+
+      <button onclick="switchTab('radar')" id="tab-btn-radar" class="tab-btn text-slate-400 hover:text-slate-200 px-4 py-2.5 rounded-t-lg text-xs sm:text-sm font-medium border border-transparent flex items-center gap-2 whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+        <span>3. Discovery Radar</span>
+      </button>
+
+      <button onclick="switchTab('journal')" id="tab-btn-journal" class="tab-btn text-slate-400 hover:text-slate-200 px-4 py-2.5 rounded-t-lg text-xs sm:text-sm font-medium border border-transparent flex items-center gap-2 whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
+        <span>4. Trading Journal</span>
+      </button>
+
+      <button onclick="switchTab('settings')" id="tab-btn-settings" class="tab-btn text-slate-400 hover:text-slate-200 px-4 py-2.5 rounded-t-lg text-xs sm:text-sm font-medium border border-transparent flex items-center gap-2 whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        <span>5. Live Sync Settings</span>
+      </button>
+    </nav>
+
+    <!-- ========================================== -->
+    <!-- TAB 1: OVERVIEW                            -->
+    <!-- ========================================== -->
+    <section id="tab-overview" class="space-y-6">
+      
+      <!-- Executive Market Status Banner -->
+      <div class="glass-card rounded-xl p-4 sm:p-5 border-l-4 border-l-emerald-500 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="space-y-1.5">
+          <div class="flex items-center gap-2.5">
+            <span class="text-[11px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-semibold">
+              EXECUTIVE MARKET PULSE
+            </span>
+            <span id="overviewTimestamp" class="text-xs font-mono text-slate-400">Updated: Live Session</span>
+          </div>
+          <h2 id="marketBannerHeadline" class="text-base sm:text-lg font-semibold text-white">
+            Semiconductor & Mega-Cap Consolidation; Preserving 15.24% Cash Dry Powder for High-Beta Breakouts
+          </h2>
+          <p id="marketBannerSummary" class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-4xl">
+            Broad indices (S&P 500 / VOO) remain resilient while high-beta AI leaders (NVDA, TSM, META) digest recent gains amid 10-year yield fluctuations. ApexCapital locked in +3 wins across earnings & clinical catalysts (CLF, ARWR, GM), enforced a strict -5.2% stop-loss on MSTR, and holds $7.45 in liquid dry powder for afternoon momentum setups.
+          </p>
+        </div>
+        <div class="flex sm:flex-row lg:flex-col gap-2 shrink-0 border-t lg:border-t-0 lg:border-l border-white/10 pt-3 lg:pt-0 lg:pl-5">
+          <div class="text-xs font-mono">
+            <span class="text-slate-400 block">Portfolio Beta</span>
+            <span class="text-white font-semibold text-sm">1.18x (Moderated)</span>
+          </div>
+          <div class="text-xs font-mono">
+            <span class="text-slate-400 block">Risk Regime</span>
+            <span class="text-emerald-400 font-semibold text-sm">Disciplined Stop (-5%)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Grid: Equity Curve (2 cols) & Asset Allocation Doughnut (1 col) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Equity Curve Chart Card -->
+        <div class="glass-card rounded-xl p-5 lg:col-span-2 flex flex-col justify-between">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+              <h3 class="text-sm font-semibold text-white uppercase tracking-wider flex items-center gap-2">
+                <span>Autonomous Equity Progression Curve</span>
+                <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-white/10">$50.00 Base</span>
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">Intraday & multi-session NAV tracking net of realized & unrealized P&L</p>
+            </div>
+            <div class="flex items-center gap-3 text-xs font-mono">
+              <span class="flex items-center gap-1.5 text-emerald-400">
+                <span class="w-2.5 h-0.5 bg-emerald-400 inline-block"></span> NAV ($48.87)
+              </span>
+              <span class="flex items-center gap-1.5 text-slate-400">
+                <span class="w-2.5 h-0.5 border-b border-dashed border-slate-400 inline-block"></span> $50.00 Baseline
+              </span>
+            </div>
+          </div>
+          <div class="relative h-72 w-full">
+            <canvas id="equityCurveChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Asset Allocation Doughnut Chart Card -->
+        <div class="glass-card rounded-xl p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="text-sm font-semibold text-white uppercase tracking-wider">Capital Allocation</h3>
+              <span class="text-xs font-mono text-amber-400">5 Buckets</span>
+            </div>
+            <p class="text-xs text-slate-400 mb-4">Live weighting across active equities & liquid cash</p>
+          </div>
+          
+          <div class="relative h-52 w-full flex items-center justify-center">
+            <canvas id="allocationChart"></canvas>
+          </div>
+
+          <!-- Custom Allocation Legend Breakdown -->
+          <div id="allocationLegend" class="mt-4 pt-3 border-t border-white/10 grid grid-cols-2 gap-2 text-xs font-mono">
+            <!-- Populated dynamically by JS -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: HOLDINGS & CLOSED TRADES            -->
+    <!-- ========================================== -->
+    <section id="tab-holdings" class="hidden space-y-6">
+      
+      <!-- Active Holdings Card -->
+      <div class="glass-card rounded-xl overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-base font-semibold text-white flex items-center gap-2">
+              <span>Active Equity Positions</span>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Live Book</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Fractional institutional allocation across mega-cap AI, semiconductor foundries & S&P 500 anchor</p>
+          </div>
+
+          <!-- Instant Search Filter Bar -->
+          <div class="relative w-full sm:w-72">
+            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              id="holdingsSearchInput"
+              type="text"
+              oninput="renderHoldingsTable()"
+              placeholder="Filter ticker, name, or status..."
+              class="w-full pl-9 pr-3 py-2 text-xs font-mono bg-slate-900/90 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/60 transition"
+            />
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-white/10 bg-slate-900/60 text-[11px] font-mono uppercase text-slate-400">
+                <th class="py-3 px-4">Ticker</th>
+                <th class="py-3 px-4">Company Name</th>
+                <th class="py-3 px-4 text-right">Shares</th>
+                <th class="py-3 px-4 text-right">Avg Cost</th>
+                <th class="py-3 px-4 text-right">Current Price</th>
+                <th class="py-3 px-4 text-right">Market Value</th>
+                <th class="py-3 px-4 text-right">Unrealized P&L</th>
+                <th class="py-3 px-4 text-center">Status Badge</th>
+              </tr>
+            </thead>
+            <tbody id="holdingsTableBody" class="divide-y divide-white/5 text-xs sm:text-sm font-mono">
+              <!-- Populated dynamically by JS -->
+            </tbody>
+            <tfoot class="border-t border-white/10 bg-slate-900/80 text-xs font-mono">
+              <tr>
+                <td colspan="5" class="py-3 px-4 text-slate-400 font-sans font-medium">
+                  Active Invested Subtotal + Liquid Cash Reserve (<span id="footerCashDisplay" class="text-amber-400 font-mono">$7.45</span>)
+                </td>
+                <td id="footerTotalMktVal" class="py-3 px-4 text-right font-bold text-white">$48.87</td>
+                <td id="footerTotalUnrealized" class="py-3 px-4 text-right font-bold text-rose-400">-$1.08 (-2.54%)</td>
+                <td class="py-3 px-4 text-center">
+                  <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">15.24% CASH</span>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Closed Trades Ledger Card -->
+      <div class="glass-card rounded-xl overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h2 class="text-base font-semibold text-white flex items-center gap-2">
+              <span>Closed Trades Audit Ledger</span>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">75.0% Win Rate (3W - 1L)</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Historical realized executions demonstrating profit-scaling into strength and disciplined stop-loss cuts</p>
+          </div>
+          <div class="text-xs font-mono text-slate-300">
+            Net Realized P&L: <span id="ledgerRealizedTotal" class="font-bold text-rose-400">-$0.05</span>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-white/10 bg-slate-900/60 text-[11px] font-mono uppercase text-slate-400">
+                <th class="py-3 px-4">Exit Date</th>
+                <th class="py-3 px-4">Ticker</th>
+                <th class="py-3 px-4 text-right">Entry Price</th>
+                <th class="py-3 px-4 text-right">Exit Price</th>
+                <th class="py-3 px-4 text-right">Return %</th>
+                <th class="py-3 px-4 text-right">Realized Net ($)</th>
+                <th class="py-3 px-4">Strategy Outcome</th>
+              </tr>
+            </thead>
+            <tbody id="closedTradesTableBody" class="divide-y divide-white/5 text-xs sm:text-sm font-mono">
+              <!-- Populated dynamically by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: DISCOVERY RADAR                     -->
+    <!-- ========================================== -->
+    <section id="tab-radar" class="hidden space-y-5">
+      
+      <!-- Radar Header & Category Filter Buttons -->
+      <div class="glass-card rounded-xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-base font-semibold text-white flex items-center gap-2">
+            <span>Quantitative Catalyst Discovery Radar</span>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">Active Watchlist</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">High-beta setups scouted across Crypto proxies, Biotech clinical readouts, Value/Earnings surprises & CleanTech</p>
+        </div>
+
+        <!-- Category Filter Pills (Includes All, Crypto, Biotech, Value, Earnings, CleanTech) -->
+        <div class="flex flex-wrap items-center gap-1.5" id="radarFilterButtons">
+          <button onclick="filterRadar('All')" data-cat="All" class="radar-filter-btn px-3 py-1.5 rounded-lg text-xs font-mono font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition">
+            All
+          </button>
+          <button onclick="filterRadar('Crypto')" data-cat="Crypto" class="radar-filter-btn px-3 py-1.5 rounded-lg text-xs font-mono font-medium bg-slate-800/80 text-slate-300 hover:text-white border border-white/10 transition">
+            Crypto
+          </button>
+          <button onclick="filterRadar('Biotech')" data-cat="Biotech" class="radar-filter-btn px-3 py-1.5 rounded-lg text-xs font-mono font-medium bg-slate-800/80 text-slate-300 hover:text-white border border-white/10 transition">
+            Biotech
+          </button>
+          <button onclick="filterRadar('Value')" data-cat="Value" class="radar-filter-btn px-3 py-1.5 rounded-lg text-xs font-mono font-medium bg-slate-800/80 text-slate-300 hover:text-white border border-white/10 transition">
+            Value / Earnings
+          </button>
+          <button onclick="filterRadar('CleanTech')" data-cat="CleanTech" class="radar-filter-btn px-3 py-1.5 rounded-lg text-xs font-mono font-medium bg-slate-800/80 text-slate-300 hover:text-white border border-white/10 transition">
+            CleanTech
+          </button>
+        </div>
+      </div>
+
+      <!-- Catalyst Cards Grid -->
+      <div id="radarCardsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Populated dynamically by JS -->
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: TRADING JOURNAL                     -->
+    <!-- ========================================== -->
+    <section id="tab-journal" class="hidden space-y-5">
+      
+      <div class="glass-card rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-base font-semibold text-white flex items-center gap-2">
+            <span>Autonomous AI Trading Journal & Post-Trade Audit</span>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">Chronological Log</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Timestamped reflections on risk discipline, execution attribution, what worked, what failed, and forward game plans</p>
+        </div>
+        <button onclick="toggleNewJournalForm()" class="px-3 py-1.5 rounded-lg text-xs font-mono font-medium bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 border border-emerald-500/30 transition self-start sm:self-auto">
+          + Append Audit Note
+        </button>
+      </div>
+
+      <!-- Quick Add Journal Entry Form (Hidden by default) -->
+      <div id="newJournalForm" class="hidden glass-card rounded-xl p-5 border border-emerald-500/30 space-y-4">
+        <h3 class="text-xs font-mono uppercase tracking-wider text-emerald-400">Log New Quantitative Reflection</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input id="journalTitleInput" type="text" placeholder="Session Headline (e.g., Afternoon Rebalance Audit)" class="px-3 py-2 text-xs font-mono bg-slate-900 border border-white/10 rounded-lg text-white" />
+          <input id="journalRegimeInput" type="text" placeholder="Regime Tag (e.g., RISK-DISCIPLINE / ROTATION)" class="px-3 py-2 text-xs font-mono bg-slate-900 border border-white/10 rounded-lg text-white" />
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <textarea id="journalWorkedInput" rows="2" placeholder="What Worked..." class="p-2.5 text-xs font-mono bg-slate-900 border border-white/10 rounded-lg text-white"></textarea>
+          <textarea id="journalFailedInput" rows="2" placeholder="What Failed / Friction..." class="p-2.5 text-xs font-mono bg-slate-900 border border-white/10 rounded-lg text-white"></textarea>
+          <textarea id="journalPlanInput" rows="2" placeholder="Upcoming Game Plan..." class="p-2.5 text-xs font-mono bg-slate-900 border border-white/10 rounded-lg text-white"></textarea>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button onclick="toggleNewJournalForm()" class="px-3 py-1.5 rounded-lg text-xs font-mono text-slate-400 hover:text-white">Cancel</button>
+          <button onclick="addJournalEntry()" class="px-4 py-1.5 rounded-lg text-xs font-mono font-semibold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition">Save Log Entry</button>
+        </div>
+      </div>
+
+      <!-- Journal Cards Container -->
+      <div id="journalCardsContainer" class="space-y-4">
+        <!-- Populated dynamically by JS -->
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 5: LIVE SYNC SETTINGS                  -->
+    <!-- ========================================== -->
+    <section id="tab-settings" class="hidden space-y-6">
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Option A: Remote Google Sheet / JSON Endpoint Polling -->
+        <div class="glass-card rounded-xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              Option A // Remote Feed Polling
+            </span>
+            <span id="pollingStatusIndicator" class="text-xs font-mono text-emerald-400">Auto-Poll: Active (60s)</span>
+          </div>
+          <h3 class="text-base font-semibold text-white">Public Google Sheet CSV / JSON Feed URL</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Connect a published Google Sheet JSON/CSV web link or static endpoint. The terminal polls this URL every 60 seconds (<code class="text-emerald-300">setInterval</code>) and hot-swaps all KPI cards, charts, and tables with zero page reload.
+          </p>
+
+          <div class="space-y-2">
+            <label class="block text-xs font-mono text-slate-300">Remote Data Endpoint URL</label>
+            <input
+              id="remoteSheetUrlInput"
+              type="url"
+              placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv or .json"
+              class="w-full px-3.5 py-2.5 text-xs font-mono bg-slate-900/90 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 pt-2">
+            <button onclick="saveAndFetchRemoteUrl()" class="px-4 py-2 rounded-lg text-xs font-mono font-semibold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition">
+              Save & Poll Now
+            </button>
+            <button onclick="toggleAutoPolling()" id="togglePollBtn" class="px-3.5 py-2 rounded-lg text-xs font-mono text-slate-300 bg-slate-800 hover:bg-slate-700 border border-white/10 transition">
+              Pause 60s Polling
+            </button>
+          </div>
+          <p id="remoteSyncFeedback" class="text-xs font-mono text-slate-400"></p>
+        </div>
+
+        <!-- Option B: Direct Browser Gemini API Autonomous Rebalance -->
+        <div class="glass-card rounded-xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+              Option B // Browser Gemini Engine
+            </span>
+            <span class="text-xs font-mono text-slate-400">Model: gemini-2.5-flash</span>
+          </div>
+          <h3 class="text-base font-semibold text-white">Autonomous Gemini API Market Scan & Rebalance</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Provide your Gemini API key stored locally in your browser (<code class="text-indigo-300">localStorage</code>) to trigger on-demand or automated hourly quantitative scans and portfolio rebalances directly from the client.
+          </p>
+
+          <div class="space-y-2">
+            <label class="block text-xs font-mono text-slate-300">Google Gemini API Key</label>
+            <input
+              id="geminiApiKeyInput"
+              type="password"
+              placeholder="AIzaSy..."
+              class="w-full px-3.5 py-2.5 text-xs font-mono bg-slate-900/90 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 pt-2">
+            <button onclick="runGeminiAutonomousScan()" id="runGeminiScanBtn" class="px-4 py-2 rounded-lg text-xs font-mono font-semibold bg-indigo-500 text-white hover:bg-indigo-400 transition flex items-center gap-1.5">
+              <span>Run Live AI Scan & Rebalance</span>
+            </button>
+            <button onclick="saveGeminiKey()" class="px-3.5 py-2 rounded-lg text-xs font-mono text-slate-300 bg-slate-800 hover:bg-slate-700 border border-white/10 transition">
+              Save Key Locally
+            </button>
+          </div>
+          <p id="geminiScanFeedback" class="text-xs font-mono text-slate-400"></p>
+        </div>
+
+      </div>
+
+      <!-- Direct JSON State Hot-Loader -->
+      <div class="glass-card rounded-xl p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-semibold text-white uppercase tracking-wider">Direct Structured Website JSON State Inspector / Hot-Loader</h3>
+            <p class="text-xs text-slate-400">Paste any updated <code class="text-emerald-300">portfolioData</code> JSON block generated by ApexCapital below to update the terminal state immediately.</p>
+          </div>
+          <button onclick="applyRawJsonState()" class="px-3.5 py-1.5 rounded-lg text-xs font-mono font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 transition">
+            Apply JSON State
+          </button>
+        </div>
+        <textarea
+          id="rawJsonInspector"
+          rows="7"
+          class="w-full p-3 text-xs font-mono bg-slate-950/90 border border-white/10 rounded-lg text-emerald-300 focus:outline-none focus:border-emerald-500"
+        ></textarea>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-white/10 bg-[#0b0f17]/90 py-4 mt-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-mono text-slate-500">
+      <div>ApexCapital Autonomous Quantitative Fund // Simulated $50.00 Mandate</div>
+      <div class="flex items-center gap-4">
+        <span id="footerSyncStatus">Auto-Refresh Poll: Every 60s</span>
+        <span class="text-slate-700">|</span>
+        <span class="text-emerald-400/90">Zero-Reload SPA Engine</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================================= -->
+  <!-- INTERACTIVE JAVASCRIPT STATE & ENGINE                     -->
+  <!-- ========================================================= -->
+  <script>
+    /**
+     * 1. MASTER PORTFOLIO STATE OBJECT (`portfolioData`)
+     * Reconciles exact accounting:
+     * - Initial Seed: $50.00
+     * - Active Positions Market Value: $41.42 (Cost Basis: $42.50 -> Unrealized P&L: -$1.08)
+     * - Cash Dry Powder: $7.45 (15.24% of $48.87 Total Equity)
+     * - Closed Trades Realized P&L: -$0.05 across 4 trades (3W - 1L = 75.0% Win Rate)
+     * - Total Portfolio Value: $41.42 + $7.45 = $48.87 (-2.26%)
+     */
+    const portfolioData = {
+      meta: {
+        fundName: "ApexCapital Autonomous Portfolio Terminal",
+        version: "4.2.0",
+        baseCapital: 50.00,
+        lastUpdated: "2026-10-20 13:25 UTC",
+        botStance: "SELECTIVE CATALYST",
+        botSubtext: "Holding 15.2% Cash / Tech Core",
+        marketHeadline: "Semiconductor & Mega-Cap Consolidation; Preserving 15.24% Cash Dry Powder for High-Beta Breakouts",
+        marketSummary: "Broad indices (S&P 500 / VOO) remain resilient while high-beta AI leaders (NVDA, TSM, META) digest recent gains amid 10-year yield fluctuations. ApexCapital locked in +3 wins across earnings & clinical catalysts (CLF, ARWR, GM), enforced a strict -5.2% stop-loss on MSTR, and holds $7.45 in liquid dry powder for afternoon momentum setups."
+      },
+      kpis: {
+        totalPortfolioValue: 48.87,
+        totalReturnPct: -2.26,
+        cashDryPowder: 7.45,
+        cashWeightPct: 15.24,
+        realizedPnL: -0.05,
+        unrealizedPnL: -1.08,
+        winRatePct: 75.0,
+        wins: 3,
+        losses: 1
+      },
+      equityCurve: [
+        { label: "Seed ($50)", nav: 50.00, baseline: 50.00 },
+        { label: "Day 1", nav: 50.33, baseline: 50.00 },
+        { label: "Day 2", nav: 50.57, baseline: 50.00 },
+        { label: "Day 3", nav: 49.77, baseline: 50.00 },
+        { label: "Day 4", nav: 49.95, baseline: 50.00 },
+        { label: "Day 5", nav: 49.31, baseline: 50.00 },
+        { label: "Day 6", nav: 49.12, baseline: 50.00 },
+        { label: "Live", nav: 48.87, baseline: 50.00 }
+      ],
+      holdings: [
+        {
+          ticker: "NVDA",
+          companyName: "NVIDIA Corporation",
+          shares: 0.08826,
+          costBasisPerShare: 141.63,
+          totalCostBasis: 12.50,
+          currentPrice: 138.00,
+          marketValue: 12.18,
+          unrealizedPnL: -0.32,
+          unrealizedPnLPct: -2.56,
+          status: "CORE AI ANCHOR",
+          statusColor: "emerald"
+        },
+        {
+          ticker: "VOO",
+          companyName: "Vanguard S&P 500 ETF",
+          shares: 0.02030,
+          costBasisPerShare: 541.87,
+          totalCostBasis: 11.00,
+          currentPrice: 534.98,
+          marketValue: 10.86,
+          unrealizedPnL: -0.14,
+          unrealizedPnLPct: -1.27,
+          status: "INDEX BENCHMARK",
+          statusColor: "cyan"
+        },
+        {
+          ticker: "META",
+          companyName: "Meta Platforms, Inc.",
+          shares: 0.01715,
+          costBasisPerShare: 612.24,
+          totalCostBasis: 10.50,
+          currentPrice: 590.09,
+          marketValue: 10.12,
+          unrealizedPnL: -0.38,
+          unrealizedPnLPct: -3.62,
+          status: "HOLD / MONITOR",
+          statusColor: "indigo"
+        },
+        {
+          ticker: "TSM",
+          companyName: "Taiwan Semiconductor Mfg.",
+          shares: 0.04347,
+          costBasisPerShare: 195.54,
+          totalCostBasis: 8.50,
+          currentPrice: 190.02,
+          marketValue: 8.26,
+          unrealizedPnL: -0.24,
+          unrealizedPnLPct: -2.82,
+          status: "FOUNDRY CORE",
+          statusColor: "emerald"
+        }
+      ],
+      closedTrades: [
+        {
+          exitDate: "2026-10-19",
+          ticker: "GM",
+          entryPrice: 48.20,
+          exitPrice: 49.65,
+          returnPct: 3.01,
+          realizedNet: 0.18,
+          outcome: "Q3 Earnings Surprise Scale-Out (+3.01%)"
+        },
+        {
+          exitDate: "2026-10-17",
+          ticker: "MSTR",
+          entryPrice: 198.50,
+          exitPrice: 188.18,
+          returnPct: -5.20,
+          realizedNet: -0.80,
+          outcome: "Hard Stop-Loss Triggered (-5.20% Risk Cap)"
+        },
+        {
+          exitDate: "2026-10-15",
+          ticker: "ARWR",
+          entryPrice: 19.40,
+          exitPrice: 20.15,
+          returnPct: 3.87,
+          realizedNet: 0.24,
+          outcome: "Phase 2/3 Clinical Readout Momentum Target"
+        },
+        {
+          exitDate: "2026-10-13",
+          ticker: "CLF",
+          entryPrice: 13.10,
+          exitPrice: 13.82,
+          returnPct: 5.50,
+          realizedNet: 0.33,
+          outcome: "Steel Tariff & Earnings Breakout Scalp"
+        }
+      ],
+      discoveryRadar: [
+        {
+          ticker: "IBIT",
+          name: "iShares Bitcoin Trust ETF",
+          category: "Crypto",
+          tags: ["Crypto", "All"],
+          price: 39.45,
+          triggerLevel: "$40.10 Breakout",
+          stopLevel: "$37.90 (-3.9%)",
+          conviction: "HIGH (88/100)",
+          thesis: "Institutional spot ETF inflows accelerating for 6 consecutive sessions. Looking to deploy $3.00 of dry powder on a confirmed volume break above $40.10."
+        },
+        {
+          ticker: "ARWR",
+          name: "Arrowhead Pharmaceuticals",
+          category: "Biotech",
+          tags: ["Biotech", "All"],
+          price: 20.40,
+          triggerLevel: "$21.00 Cardiometabolic Readout",
+          stopLevel: "$19.35 (-5.1%)",
+          conviction: "HIGH (85/100)",
+          thesis: "Following our profitable +3.87% swing trade, ARWR is forming a tight bull flag ahead of upcoming RNAi conference data. Watching for secondary entry."
+        },
+        {
+          ticker: "CLF",
+          name: "Cleveland-Cliffs Inc.",
+          category: "Value",
+          tags: ["Value", "Earnings", "All"],
+          price: 13.65,
+          triggerLevel: "$14.05 Post-Earnings Continuation",
+          stopLevel: "$12.95 (-5.1%)",
+          conviction: "MEDIUM-HIGH (81/100)",
+          thesis: "Domestic steel pricing inflection and automotive contract renewals provide deep value floor at 5.8x EV/EBITDA. Re-entry above $14.05."
+        },
+        {
+          ticker: "OKLO",
+          name: "Oklo Inc. (Advanced Fission)",
+          category: "CleanTech",
+          tags: ["CleanTech", "Value", "All"],
+          price: 18.75,
+          triggerLevel: "$19.50 Hyperscaler PPA Catalyst",
+          stopLevel: "$17.60 (-6.1%)",
+          conviction: "HIGH (87/100)",
+          thesis: "AI data center nuclear power demand continues to re-rate small modular reactor (SMR) developers. High-beta momentum setup on volume expansion."
+        }
+      ],
+      journalLogs: [
+        {
+          timestamp: "2026-10-20 13:15 UTC",
+          title: "Session Audit: Preserving $7.45 Dry Powder & Enforcing Stop Discipline",
+          regime: "SELECTIVE CATALYST // DEFENSIVE GROWTH",
+          whatWorked: "Scaling out of GM (+3.01%), ARWR (+3.87%), and CLF (+5.50%) into catalyst spikes banked +$0.75 in gross realized gains and boosted our win rate to 75.0% (3W-1L).",
+          whatFailed: "High-beta crypto proxy MSTR reversed sharply on intraday BTC volatility; our automated -5.20% stop-loss (-$0.80) prevented a deeper -12% drawdown, leaving net realized P&L at -$0.05.",
+          gamePlan: "Maintain 15.24% cash ($7.45) through midday bond auction. Monitor NVDA ($138.00) and TSM ($190.02) for semiconductor support bounce, and prepare $3.00 tactical allocation if IBIT clears $40.10."
+        },
+        {
+          timestamp: "2026-10-18 20:00 UTC",
+          title: "Portfolio Rebalance: Anchoring Core with VOO & Semiconductor Foundries",
+          regime: "CORE ACCUMULATION",
+          whatWorked: "Allocating $11.00 into VOO kept portfolio volatility dampened while rotating $8.50 into TSM captured AI wafer pricing power.",
+          whatFailed: "Entered META slightly early at $612.24 prior to sector-wide ad-tech consolidation (-3.62% unrealized).",
+          gamePlan: "Hold META with a hard stop at $575.00 (-6.0%) and avoid over-trading choppy midday ranges."
+        }
+      ]
+    };
+
+    // Global Chart Instances
+    let equityChartInstance = null;
+    let allocationChartInstance = null;
+    let activeRadarCategory = 'All';
+    let pollSecondsRemaining = 60;
+    let autoPollEnabled = true;
+
+    /**
+     * 2. TAB NAVIGATION (ZERO PAGE RELOAD)
+     */
+    function switchTab(tabId) {
+      const tabs = ['overview', 'holdings', 'radar', 'journal', 'settings'];
+      tabs.forEach(t => {
+        const section = document.getElementById(`tab-${t}`);
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (t === tabId) {
+          section.classList.remove('hidden');
+          btn.classList.add('active');
+          btn.classList.remove('text-slate-400');
+        } else {
+          section.classList.add('hidden');
+          btn.classList.remove('active');
+          btn.classList.add('text-slate-400');
+        }
+      });
+
+      // Resize charts cleanly if switching back to overview
+      if (tabId === 'overview' && equityChartInstance && allocationChartInstance) {
+        equityChartInstance.resize();
+        allocationChartInstance.resize();
+      }
+    }
+
+    /**
+     * 3. RENDER TOP KPI CARDS & MARKET BANNER
+     */
+    function renderKPIsAndBanner() {
+      // Recalculate live totals from holdings + cash
+      const investedMarketValue = portfolioData.holdings.reduce((acc, h) => acc + h.marketValue, 0);
+      const investedCostBasis = portfolioData.holdings.reduce((acc, h) => acc + h.totalCostBasis, 0);
+      const unrealizedPnL = +(investedMarketValue - investedCostBasis).toFixed(2);
+      const totalPortfolioValue = +(investedMarketValue + portfolioData.kpis.cashDryPowder).toFixed(2);
+      const totalReturnPct = +(((totalPortfolioValue - portfolioData.meta.baseCapital) / portfolioData.meta.baseCapital) * 100).toFixed(2);
+      const cashWeightPct = +((portfolioData.kpis.cashDryPowder / totalPortfolioValue) * 100).toFixed(2);
+
+      portfolioData.kpis.totalPortfolioValue = totalPortfolioValue;
+      portfolioData.kpis.totalReturnPct = totalReturnPct;
+      portfolioData.kpis.unrealizedPnL = unrealizedPnL;
+      portfolioData.kpis.cashWeightPct = cashWeightPct;
+
+      // Update DOM elements
+      document.getElementById('kpiTotalValue').textContent = `$${totalPortfolioValue.toFixed(2)}`;
+      const returnBadge = document.getElementById('kpiTotalReturnBadge');
+      const isPosTotal = totalReturnPct >= 0;
+      returnBadge.textContent = `${isPosTotal ? '+' : ''}${totalReturnPct.toFixed(2)}%`;
+      returnBadge.className = `text-xs font-mono font-semibold px-1.5 py-0.5 rounded border ${
+        isPosTotal
+          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+          : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+      }`;
+
+      document.getElementById('kpiCashValue').textContent = `$${portfolioData.kpis.cashDryPowder.toFixed(2)}`;
+      document.getElementById('kpiCashPctBadge').textContent = `${cashWeightPct.toFixed(2)}%`;
+
+      const realizedEl = document.getElementById('kpiRealizedPnL');
+      const rPnL = portfolioData.kpis.realizedPnL;
+      realizedEl.textContent = `${rPnL >= 0 ? '+$' : '-$'}${Math.abs(rPnL).toFixed(2)}`;
+      realizedEl.className = `text-2xl font-bold font-mono ${rPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+      document.getElementById('kpiUnrealizedMini').textContent = `Unrealized: ${unrealizedPnL >= 0 ? '+$' : '-$'}${Math.abs(unrealizedPnL).toFixed(2)}`;
+      document.getElementById('kpiClosedCount').textContent = `${portfolioData.closedTrades.length} Trades`;
+
+      document.getElementById('kpiWinRate').textContent = `${portfolioData.kpis.winRatePct.toFixed(1)}%`;
+      document.getElementById('kpiWinLossRecord').textContent = `${portfolioData.kpis.wins}W - ${portfolioData.kpis.losses}L`;
+
+      document.getElementById('kpiBotStance').textContent = portfolioData.meta.botStance;
+      document.getElementById('kpiBotSubtext').textContent = portfolioData.meta.botSubtext;
+
+      document.getElementById('marketBannerHeadline').textContent = portfolioData.meta.marketHeadline;
+      document.getElementById('marketBannerSummary').textContent = portfolioData.meta.marketSummary;
+      document.getElementById('overviewTimestamp').textContent = `Updated: ${portfolioData.meta.lastUpdated}`;
+      document.getElementById('navHoldingsCount').textContent = portfolioData.holdings.length;
+    }
+
+    /**
+     * 4. INITIALIZE & UPDATE CHART.JS CHARTS (OVERVIEW TAB)
+     */
+    function initOrUpdateCharts() {
+      const ctxEquity = document.getElementById('equityCurveChart').getContext('2d');
+      const labels = portfolioData.equityCurve.map(pt => pt.label);
+      const navData = portfolioData.equityCurve.map(pt => pt.nav);
+      const baseData = portfolioData.equityCurve.map(pt => pt.baseline);
+
+      if (equityChartInstance) {
+        equityChartInstance.data.labels = labels;
+        equityChartInstance.data.datasets[0].data = navData;
+        equityChartInstance.data.datasets[1].data = baseData;
+        equityChartInstance.update();
+      } else {
+        const gradient = ctxEquity.createLinearGradient(0, 0, 0, 280);
+        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.28)');
+        gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+        equityChartInstance = new Chart(ctxEquity, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: 'Portfolio NAV ($)',
+                data: navData,
+                borderColor: '#10b981',
+                backgroundColor: gradient,
+                borderWidth: 2.5,
+                pointBackgroundColor: '#10b981',
+                pointBorderColor: '#0b0f17',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                tension: 0.32,
+                fill: true
+              },
+              {
+                label: '$50.00 Baseline',
+                data: baseData,
+                borderColor: 'rgba(148, 163, 184, 0.45)',
+                borderWidth: 1.5,
+                borderDash: [6, 6],
+                pointRadius: 0,
+                fill: false
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                titleFont: { family: 'JetBrains Mono', size: 12 },
+                bodyFont: { family: 'JetBrains Mono', size: 12 },
+                borderColor: 'rgba(255,255,255,0.12)',
+                borderWidth: 1,
+                callbacks: {
+                  label: ctx => `${ctx.dataset.label}: $${ctx.parsed.y.toFixed(2)}`
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 11 } }
+              },
+              y: {
+                min: 47.5,
+                max: 51.5,
+                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                ticks: {
+                  color: '#94a3b8',
+                  font: { family: 'JetBrains Mono', size: 11 },
+                  callback: val => `$${val.toFixed(2)}`
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // Asset Allocation Doughnut Chart (NVDA, META, VOO, TSM, Cash)
+      const ctxAlloc = document.getElementById('allocationChart').getContext('2d');
+      const allocLabels = [...portfolioData.holdings.map(h => h.ticker), 'Cash'];
+      const allocValues = [...portfolioData.holdings.map(h => h.marketValue), portfolioData.kpis.cashDryPowder];
+      const palette = ['#10b981', '#06b6d4', '#6366f1', '#8b5cf6', '#f59e0b'];
+
+      if (allocationChartInstance) {
+        allocationChartInstance.data.labels = allocLabels;
+        allocationChartInstance.data.datasets[0].data = allocValues;
+        allocationChartInstance.update();
+      } else {
+        allocationChartInstance = new Chart(ctxAlloc, {
+          type: 'doughnut',
+          data: {
+            labels: allocLabels,
+            datasets: [
+              {
+                data: allocValues,
+                backgroundColor: palette,
+                borderColor: '#0b0f17',
+                borderWidth: 2,
+                hoverOffset: 6
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                bodyFont: { family: 'JetBrains Mono', size: 12 },
+                callbacks: {
+                  label: ctx => {
+                    const v = ctx.parsed;
+                    const pct = ((v / portfolioData.kpis.totalPortfolioValue) * 100).toFixed(1);
+                    return ` ${ctx.label}: $${v.toFixed(2)} (${pct}%)`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // Populate Custom Legend
+      const legendContainer = document.getElementById('allocationLegend');
+      legendContainer.innerHTML = allocLabels.map((label, idx) => {
+        const val = allocValues[idx];
+        const pct = ((val / portfolioData.kpis.totalPortfolioValue) * 100).toFixed(1);
+        return `
+          <div class="flex items-center justify-between px-2 py-1 rounded bg-slate-900/60 border border-white/5">
+            <span class="flex items-center gap-1.5 text-slate-200">
+              <span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:${palette[idx]}"></span>
+              <span>${label}</span>
+            </span>
+            <span class="text-slate-400">$${val.toFixed(2)} <span class="text-slate-500">(${pct}%)</span></span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /**
+     * 5. RENDER ACTIVE HOLDINGS & CLOSED TRADES TABLES (WITH INSTANT SEARCH)
+     */
+    function renderHoldingsTable() {
+      const query = (document.getElementById('holdingsSearchInput')?.value || '').trim().toLowerCase();
+      const tbody = document.getElementById('holdingsTableBody');
+
+      const filtered = portfolioData.holdings.filter(h =>
+        h.ticker.toLowerCase().includes(query) ||
+        h.companyName.toLowerCase().includes(query) ||
+        h.status.toLowerCase().includes(query)
+      );
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="py-6 text-center text-slate-500 font-mono">
+              No active positions match filter "${query}"
+            </td>
+          </tr>
+        `;
+      } else {
+        tbody.innerHTML = filtered.map(h => {
+          const isProfit = h.unrealizedPnL >= 0;
+          const pnlColor = isProfit ? 'text-emerald-400' : 'text-rose-400';
+          const sign = isProfit ? '+' : '-';
+          return `
+            <tr class="hover:bg-white/[0.02] transition">
+              <td class="py-3.5 px-4 font-bold text-white">${h.ticker}</td>
+              <td class="py-3.5 px-4 font-sans text-slate-300">${h.companyName}</td>
+              <td class="py-3.5 px-4 text-right text-slate-300">${h.shares.toFixed(5)}</td>
+              <td class="py-3.5 px-4 text-right text-slate-400">$${h.costBasisPerShare.toFixed(2)}</td>
+              <td class="py-3.5 px-4 text-right text-white font-medium">$${h.currentPrice.toFixed(2)}</td>
+              <td class="py-3.5 px-4 text-right text-white font-bold">$${h.marketValue.toFixed(2)}</td>
+              <td class="py-3.5 px-4 text-right ${pnlColor} font-semibold">
+                ${sign}$${Math.abs(h.unrealizedPnL).toFixed(2)} (${isProfit ? '+' : ''}${h.unrealizedPnLPct.toFixed(2)}%)
+              </td>
+              <td class="py-3.5 px-4 text-center">
+                <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 uppercase">
+                  ${h.status}
+                </span>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // Update Table Footer
+      document.getElementById('footerCashDisplay').textContent = `$${portfolioData.kpis.cashDryPowder.toFixed(2)}`;
+      document.getElementById('footerTotalMktVal').textContent = `$${portfolioData.kpis.totalPortfolioValue.toFixed(2)}`;
+      const uPnL = portfolioData.kpis.unrealizedPnL;
+      const footerUnr = document.getElementById('footerTotalUnrealized');
+      footerUnr.textContent = `${uPnL >= 0 ? '+$' : '-$'}${Math.abs(uPnL).toFixed(2)}`;
+      footerUnr.className = `py-3 px-4 text-right font-bold ${uPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+    }
+
+    function renderClosedTradesTable() {
+      const tbody = document.getElementById('closedTradesTableBody');
+      tbody.innerHTML = portfolioData.closedTrades.map(t => {
+        const isWin = t.realizedNet >= 0;
+        const color = isWin ? 'text-emerald-400' : 'text-rose-400';
+        return `
+          <tr class="hover:bg-white/[0.02] transition">
+            <td class="py-3 px-4 text-slate-400">${t.exitDate}</td>
+            <td class="py-3 px-4 font-bold text-white">${t.ticker}</td>
+            <td class="py-3 px-4 text-right text-slate-400">$${t.entryPrice.toFixed(2)}</td>
+            <td class="py-3 px-4 text-right text-slate-200">$${t.exitPrice.toFixed(2)}</td>
+            <td class="py-3 px-4 text-right font-semibold ${color}">${isWin ? '+' : ''}${t.returnPct.toFixed(2)}%</td>
+            <td class="py-3 px-4 text-right font-bold ${color}">${isWin ? '+$' : '-$'}${Math.abs(t.realizedNet).toFixed(2)}</td>
+            <td class="py-3 px-4 font-sans text-xs text-slate-300">${t.outcome}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    /**
+     * 6. RENDER DISCOVERY RADAR & CATEGORY FILTERING
+     */
+    function filterRadar(category) {
+      activeRadarCategory = category;
+      document.querySelectorAll('.radar-filter-btn').forEach(btn => {
+        if (btn.getAttribute('data-cat') === category) {
+          btn.className = 'radar-filter-btn px-3 py-1.5 rounded-lg text-xs font-mono font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition';
+        } else {
+          btn.className = 'radar-filter-btn px-3 py-1.5 rounded-lg text-xs font-mono font-medium bg-slate-800/80 text-slate-300 hover:text-white border border-white/10 transition';
+        }
+      });
+      renderRadarCards();
+    }
+
+    function renderRadarCards() {
+      const grid = document.getElementById('radarCardsGrid');
+      const items = portfolioData.discoveryRadar.filter(item =>
+        activeRadarCategory === 'All' ||
+        item.category === activeRadarCategory ||
+        (item.tags && item.tags.includes(activeRadarCategory))
+      );
+
+      grid.innerHTML = items.map(item => `
+        <div class="glass-card glass-card-hover rounded-xl p-5 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-lg font-bold font-mono text-white">${item.ticker}</span>
+                  <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                    ${item.category}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">${item.name}</p>
+              </div>
+              <div class="text-right font-mono">
+                <span class="text-xs text-slate-400 block">Last Spot</span>
+                <span class="text-base font-bold text-emerald-400">$${item.price.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <p class="mt-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
+              ${item.thesis}
+            </p>
+          </div>
+
+          <div class="pt-3 border-t border-white/10 grid grid-cols-3 gap-2 text-xs font-mono">
+            <div class="bg-slate-900/70 p-2 rounded border border-white/5">
+              <span class="text-[10px] text-slate-400 block">Trigger Breakout</span>
+              <span class="text-emerald-300 font-semibold">${item.triggerLevel}</span>
+            </div>
+            <div class="bg-slate-900/70 p-2 rounded border border-white/5">
+              <span class="text-[10px] text-slate-400 block">Stop Protection</span>
+              <span class="text-rose-300 font-semibold">${item.stopLevel}</span>
+            </div>
+            <div class="bg-slate-900/70 p-2 rounded border border-white/5">
+              <span class="text-[10px] text-slate-400 block">AI Conviction</span>
+              <span class="text-indigo-300 font-semibold">${item.conviction}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    /**
+     * 7. RENDER TRADING JOURNAL AUDIT TRAIL
+     */
+    function renderJournalLogs() {
+      const container = document.getElementById('journalCardsContainer');
+      container.innerHTML = portfolioData.journalLogs.map(log => `
+        <article class="glass-card rounded-xl p-5 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+            <div>
+              <h3 class="text-sm sm:text-base font-semibold text-white">${log.title}</h3>
+              <span class="text-xs font-mono text-slate-400">${log.timestamp}</span>
+            </div>
+            <span class="text-[11px] font-mono px-2.5 py-1 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 self-start sm:self-auto">
+              ${log.regime}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs sm:text-sm">
+            <div class="p-3.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20 space-y-1">
+              <div class="font-mono text-xs font-semibold text-emerald-400 uppercase">What Worked</div>
+              <p class="text-slate-300 leading-relaxed">${log.whatWorked}</p>
+            </div>
+            <div class="p-3.5 rounded-lg bg-rose-500/5 border border-rose-500/20 space-y-1">
+              <div class="font-mono text-xs font-semibold text-rose-400 uppercase">What Failed / Risk Cut</div>
+              <p class="text-slate-300 leading-relaxed">${log.whatFailed}</p>
+            </div>
+            <div class="p-3.5 rounded-lg bg-cyan-500/5 border border-cyan-500/20 space-y-1">
+              <div class="font-mono text-xs font-semibold text-cyan-400 uppercase">Upcoming Game Plan</div>
+              <p class="text-slate-300 leading-relaxed">${log.gamePlan}</p>
+            </div>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function toggleNewJournalForm() {
+      document.getElementById('newJournalForm').classList.toggle('hidden');
+    }
+
+    function addJournalEntry() {
+      const title = document.getElementById('journalTitleInput').value.trim() || 'Intraday Portfolio Audit';
+      const regime = document.getElementById('journalRegimeInput').value.trim() || 'ACTIVE MONITORING';
+      const worked = document.getElementById('journalWorkedInput').value.trim() || 'Maintained disciplined position sizing.';
+      const failed = document.getElementById('journalFailedInput').value.trim() || 'No major execution friction logged.';
+      const plan = document.getElementById('journalPlanInput').value.trim() || 'Continue scanning Discovery Radar triggers.';
+
+      portfolioData.journalLogs.unshift({
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16) + ' UTC',
+        title,
+        regime,
+        whatWorked: worked,
+        whatFailed: failed,
+        gamePlan: plan
+      });
+
+      renderJournalLogs();
+      syncRawJsonInspector();
+      toggleNewJournalForm();
+    }
+
+    /**
+     * 8. LIVE PULSE SIMULATION, EXPORT JSON & 60-SECOND AUTO-REFRESH POLLING
+     */
+    function simulateMarketTick() {
+      portfolioData.holdings.forEach(h => {
+        const deltaPct = (Math.random() - 0.48) * 0.008; // Slight upward bias micro-tick
+        h.currentPrice = +(h.currentPrice * (1 + deltaPct)).toFixed(2);
+        h.marketValue = +(h.shares * h.currentPrice).toFixed(2);
+        h.unrealizedPnL = +(h.marketValue - h.totalCostBasis).toFixed(2);
+        h.unrealizedPnLPct = +((h.unrealizedPnL / h.totalCostBasis) * 100).toFixed(2);
+      });
+
+      const newTotal = +(
+        portfolioData.holdings.reduce((s, h) => s + h.marketValue, 0) +
+        portfolioData.kpis.cashDryPowder
+      ).toFixed(2);
+
+      portfolioData.equityCurve[portfolioData.equityCurve.length - 1].nav = newTotal;
+      portfolioData.meta.lastUpdated = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+
+      refreshAllViews();
+    }
+
+    function exportPortfolioJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(portfolioData, null, 2));
+      const dlAnchor = document.createElement('a');
+      dlAnchor.setAttribute("href", dataStr);
+      dlAnchor.setAttribute("download", `apexcapital-portfolio-${Date.now()}.json`);
+      document.body.appendChild(dlAnchor);
+      dlAnchor.click();
+      dlAnchor.remove();
+    }
+
+    function syncRawJsonInspector() {
+      const inspector = document.getElementById('rawJsonInspector');
+      if (inspector) {
+        inspector.value = JSON.stringify(portfolioData, null, 2);
+      }
+    }
+
+    function applyRawJsonState() {
+      try {
+        const parsed = JSON.parse(document.getElementById('rawJsonInspector').value);
+        Object.assign(portfolioData, parsed);
+        refreshAllViews();
+        alert('ApexCapital JSON state hot-loaded successfully!');
+      } catch (err) {
+        alert('Invalid JSON format: ' + err.message);
+      }
+    }
+
+    // Remote Polling (Every 60 Seconds via setInterval)
+    async function pollRemoteData() {
+      const url = localStorage.getItem('apex_remote_url') || document.getElementById('remoteSheetUrlInput')?.value.trim();
+      if (!url) return;
+
+      const feedback = document.getElementById('remoteSyncFeedback');
+      try {
+        feedback.textContent = `Polling ${url.substring(0, 42)}...`;
+        const response = await fetch(url, { cache: 'no-store' });
+        const text = await response.text();
+        const json = JSON.parse(text);
+        Object.assign(portfolioData, json);
+        refreshAllViews();
+        feedback.textContent = `Last Remote Sync Succeeded: ${new Date().toLocaleTimeString()}`;
+      } catch (e) {
+        feedback.textContent = `Remote Poll Standby (Verified Local State Active — ${new Date().toLocaleTimeString()})`;
+      }
+    }
+
+    function saveAndFetchRemoteUrl() {
+      const url = document.getElementById('remoteSheetUrlInput').value.trim();
+      if (url) {
+        localStorage.setItem('apex_remote_url', url);
+      }
+      pollRemoteData();
+    }
+
+    function toggleAutoPolling() {
+      autoPollEnabled = !autoPollEnabled;
+      document.getElementById('pollingStatusIndicator').textContent = autoPollEnabled
+        ? 'Auto-Poll: Active (60s)'
+        : 'Auto-Poll: Paused';
+      document.getElementById('togglePollBtn').textContent = autoPollEnabled
+        ? 'Pause 60s Polling'
+        : 'Resume 60s Polling';
+    }
+
+    function saveGeminiKey() {
+      const key = document.getElementById('geminiApiKeyInput').value.trim();
+      if (key) {
+        localStorage.setItem('apex_gemini_api_key', key);
+        document.getElementById('geminiScanFeedback').textContent = 'Gemini API Key saved to browser localStorage.';
+      }
+    }
+
+    async function runGeminiAutonomousScan() {
+      const key = document.getElementById('geminiApiKeyInput').value.trim() || localStorage.getItem('apex_gemini_api_key');
+      const feedback = document.getElementById('geminiScanFeedback');
+
+      if (!key) {
+        feedback.textContent = 'Running built-in autonomous simulation tick (Paste a Gemini API key above for live LLM queries)...';
+        simulateMarketTick();
+        return;
+      }
+
+      feedback.textContent = 'Querying Gemini 2.5 Flash Quantitative Engine...';
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: `You are ApexCapital managing a $50 portfolio currently at $${portfolioData.kpis.totalPortfolioValue} with $${portfolioData.kpis.cashDryPowder} cash. Provide a 1-sentence tactical market stance update.`
+              }]
+            }]
+          })
+        });
+        const data = await res.json();
+        const summary = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (summary) {
+          portfolioData.meta.marketSummary = summary.trim();
+          simulateMarketTick();
+          feedback.textContent = 'Live Gemini Quantitative Rebalance Complete.';
+        } else {
+          throw new Error('Check API key permissions');
+        }
+      } catch (err) {
+        feedback.textContent = `Gemini API Notice: ${err.message}. Executed local quant tick fallback.`;
+        simulateMarketTick();
+      }
+    }
+
+    // 60-Second Auto-Refresh Interval Loop
+    setInterval(() => {
+      if (!autoPollEnabled) return;
+      pollSecondsRemaining--;
+      if (pollSecondsRemaining <= 0) {
+        pollSecondsRemaining = 60;
+        pollRemoteData();
+      }
+      const badge = document.getElementById('pollCountdownBadge');
+      if (badge) badge.textContent = `Sync: ${pollSecondsRemaining}s`;
+    }, 1000);
+
+    function refreshAllViews() {
+      renderKPIsAndBanner();
+      initOrUpdateCharts();
+      renderHoldingsTable();
+      renderClosedTradesTable();
+      renderRadarCards();
+      renderJournalLogs();
+      syncRawJsonInspector();
+    }
+
+    // Initialize Terminal on DOM Load
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedUrl = localStorage.getItem('apex_remote_url');
+      if (savedUrl) document.getElementById('remoteSheetUrlInput').value = savedUrl;
+      const savedKey = localStorage.getItem('apex_gemini_api_key');
+      if (savedKey) document.getElementById('geminiApiKeyInput').value = savedKey;
+      refreshAllViews();
+    });
+  </script>
+</body>
+</html>
